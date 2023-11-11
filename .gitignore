@@ -1,5 +1,12 @@
 # Data
 data
 
+# Results
+out
+
+# Python
+*.pyc
+__pycache__/
+
 # Jupyter Notebooks
 .ipynb_checkpoints
