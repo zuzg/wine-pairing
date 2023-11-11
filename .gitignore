@@ -1,8 +1,8 @@
 # Data
-data
+data/
 
 # Results
-out
+out/
 
 # Python
 *.pyc
@@ -10,3 +10,6 @@ __pycache__/
 
 # Jupyter Notebooks
 .ipynb_checkpoints
+
+# Environment
+.env

@@ -1,12 +1,13 @@
 import string
+from typing import List
 
-from gensim.models.phrases import Phraser, Phrases
+from gensim.models.phrases import Phrases
 from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
 from nltk.tokenize import word_tokenize
 
 
-def normalize_text(raw_text: str) -> list[str]:
+def normalize_text(raw_text: str) -> List[str]:
     """
     Normalize a text.
 
@@ -37,7 +38,7 @@ def normalize_text(raw_text: str) -> list[str]:
         return ""
 
 
-def normalize_sentences(sentences_tokenized: list[str]) -> list[str]:
+def normalize_sentences(sentences_tokenized: List[str]) -> List[str]:
     """
     Normalize a list of sentences.
 
@@ -52,8 +53,8 @@ def normalize_sentences(sentences_tokenized: list[str]) -> list[str]:
 
 
 def extract_phrases(
-    sentences_normalized: list[str], save_path: str = None
-) -> list[str]:
+    sentences_normalized: List[str], save_path: str | None = None
+) -> List[str]:
     """
     Extract phrases from a list of sentences.
 
@@ -68,5 +69,6 @@ def extract_phrases(
     phrased_sentences = [trigram_model[sent] for sent in bigrams]
 
     if save_path is not None:
-        trigram_model.save(save_path + "food_trigrams.pkl")
+        with open(save_path, "w") as f:
+            trigram_model.save(f)
     return phrased_sentences
