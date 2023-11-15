@@ -1,6 +1,8 @@
+import pandas as pd
 import string
 from typing import List
 
+from gensim.models import Word2Vec
 from gensim.models.phrases import Phrases
 from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
@@ -69,6 +71,33 @@ def extract_phrases(
     phrased_sentences = [trigram_model[sent] for sent in bigrams]
 
     if save_path is not None:
-        with open(save_path, "w") as f:
-            trigram_model.save(f)
+        trigram_model.save(save_path)
     return phrased_sentences
+
+
+def return_mapped_descriptor(word: str, mapping: pd.DataFrame) -> str:
+    if word in list(mapping.index):
+        normalized_word = mapping.at[word, "level_3"]
+        return normalized_word
+    else:
+        return word
+
+
+def normalize_aromas(sentences: List[str], descriptor_mapping: pd.DataFrame) -> List[str]:
+    normalized_sentences = []
+    for sent in sentences:
+        normalized_sentence = []
+        for word in sent:
+            normalized_word = return_mapped_descriptor(word, descriptor_mapping)
+            normalized_sentence.append(str(normalized_word))
+        normalized_sentences.append(normalized_sentence)
+    return normalized_sentences
+
+
+def wine_food_word2vec(wine_sentences: List[str], food_sentences: List[str], descriptor_mapping: pd.DataFrame, save_path: str) -> None:
+    normalized_wine_sentences = normalize_aromas(wine_sentences, descriptor_mapping)
+    aroma_descriptor_mapping = descriptor_mapping.loc[descriptor_mapping['type'] == 'aroma']
+    normalized_food_sentences = normalize_aromas(food_sentences, aroma_descriptor_mapping)
+    normalized_sentences = normalized_wine_sentences + normalized_food_sentences
+    wine_word2vec_model = Word2Vec(normalized_sentences, size=300, min_count=8, iter=15)
+    wine_word2vec_model.save(save_path)
