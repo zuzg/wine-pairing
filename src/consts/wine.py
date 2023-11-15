@@ -31,3 +31,14 @@ VARIETY_MAPPING = {
     "Primitivo, Zinfandel": "Zinfandel",
     "AragonÃªs, Tempranillo": "Aragonez, Tempranillo",
 }
+
+CORE_DESCRIPTORS = [
+    "aroma",
+    "weight",
+    "sweet",
+    "acid",
+    "salt",
+    "piquant",
+    "fat",
+    "bitter",
+]

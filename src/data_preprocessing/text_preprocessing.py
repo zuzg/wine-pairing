@@ -99,5 +99,5 @@ def wine_food_word2vec(wine_sentences: List[str], food_sentences: List[str], des
     aroma_descriptor_mapping = descriptor_mapping.loc[descriptor_mapping['type'] == 'aroma']
     normalized_food_sentences = normalize_aromas(food_sentences, aroma_descriptor_mapping)
     normalized_sentences = normalized_wine_sentences + normalized_food_sentences
-    wine_word2vec_model = Word2Vec(normalized_sentences, size=300, min_count=8, iter=15)
+    wine_word2vec_model = Word2Vec(sentences=normalized_sentences, vector_size=300, min_count=8)
     wine_word2vec_model.save(save_path)
