@@ -1,12 +1,14 @@
-import pandas as pd
 import string
 from typing import List
 
+import numpy as np
+import pandas as pd
 from gensim.models import Word2Vec
 from gensim.models.phrases import Phrases, Phraser
 from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
 from nltk.tokenize import word_tokenize
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 from src.consts.wine import CORE_DESCRIPTORS
 
@@ -124,7 +126,9 @@ def wine_food_word2vec(
 
 
 def normalize_nonaromas(
-    wine_reviews: List[str], descriptor_mapping: pd.DataFrame, wine_trigram_model: Phraser
+    wine_reviews: List[str],
+    descriptor_mapping: pd.DataFrame,
+    wine_trigram_model: Phraser,
 ) -> List:
     descriptor_mappings = dict()
     for c in CORE_DESCRIPTORS:
@@ -147,3 +151,54 @@ def normalize_nonaromas(
             taste_descriptors.append(descriptorized_review)
         review_descriptors.append(taste_descriptors)
     return review_descriptors
+
+
+def calculate_tfidf_embeddings(
+    df: pd.DataFrame, review_descriptors: List, wine_word2vec_model: Word2Vec
+) -> pd.DataFrame:
+    taste_descriptors = []
+    taste_vectors = []
+
+    for n in len(CORE_DESCRIPTORS):
+        taste_words = [r[n] for r in review_descriptors]
+        vectorizer = TfidfVectorizer()
+        X = vectorizer.fit(taste_words)
+        dict_of_tfidf_weightings = dict(zip(X.get_feature_names(), X.idf_))
+        wine_review_descriptors = []
+        wine_review_vectors = []
+
+        for d in taste_words:
+            weighted_review_terms = []
+            terms = d.split(" ")
+            for term in terms:
+                if term in dict_of_tfidf_weightings.keys():
+                    tfidf_weighting = dict_of_tfidf_weightings[term]
+                    try:
+                        word_vector = wine_word2vec_model.wv.get_vector(term).reshape(
+                            1, 300
+                        )
+                        weighted_word_vector = tfidf_weighting * word_vector
+                        weighted_review_terms.append(weighted_word_vector)
+                    except:
+                        continue
+            try:
+                review_vector = sum(weighted_review_terms) / len(weighted_review_terms) # np.mean
+                review_vector = review_vector[0]
+            except:
+                review_vector = np.nan
+            wine_review_vectors.append(review_vector)
+            wine_review_descriptors.append(terms)
+
+        taste_vectors.append(wine_review_vectors)
+        taste_descriptors.append(wine_review_descriptors)
+
+    taste_vectors_t = list(map(list, zip(*taste_vectors)))
+    taste_descriptors_t = list(map(list, zip(*taste_descriptors)))
+    review_vecs_df = pd.DataFrame(taste_vectors_t, columns=CORE_DESCRIPTORS)
+
+    columns_taste_descriptors = [a + "_descriptors" for a in CORE_DESCRIPTORS]
+    review_descriptors_df = pd.DataFrame(
+        taste_descriptors_t, columns=columns_taste_descriptors
+    )
+    wine_df_vecs = pd.concat([df, review_descriptors_df, review_vecs_df], axis=1)
+    return wine_df_vecs
