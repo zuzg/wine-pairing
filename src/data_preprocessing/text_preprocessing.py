@@ -88,6 +88,8 @@ def return_mapped_descriptor(
         else:
             normalized_word = mapping.at[word, "level_3"]
         return normalized_word
+    elif taste:
+        return None
     else:
         return word
 
@@ -159,11 +161,11 @@ def calculate_tfidf_embeddings(
     taste_descriptors = []
     taste_vectors = []
 
-    for n in len(CORE_DESCRIPTORS):
+    for n in range(len(CORE_DESCRIPTORS)):
         taste_words = [r[n] for r in review_descriptors]
         vectorizer = TfidfVectorizer()
         X = vectorizer.fit(taste_words)
-        dict_of_tfidf_weightings = dict(zip(X.get_feature_names(), X.idf_))
+        dict_of_tfidf_weightings = dict(zip(X.get_feature_names_out(), X.idf_))
         wine_review_descriptors = []
         wine_review_vectors = []
 
