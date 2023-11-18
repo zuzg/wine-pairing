@@ -3,10 +3,12 @@ import string
 from typing import List
 
 from gensim.models import Word2Vec
-from gensim.models.phrases import Phrases
+from gensim.models.phrases import Phrases, Phraser
 from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
 from nltk.tokenize import word_tokenize
+
+from src.consts.wine import CORE_DESCRIPTORS
 
 
 def normalize_text(raw_text: str) -> List[str]:
@@ -75,15 +77,22 @@ def extract_phrases(
     return phrased_sentences
 
 
-def return_mapped_descriptor(word: str, mapping: pd.DataFrame) -> str:
+def return_mapped_descriptor(
+    word: str, mapping: pd.DataFrame, taste: bool = False
+) -> str:
     if word in list(mapping.index):
-        normalized_word = mapping.at[word, "level_3"]
+        if taste:
+            normalized_word = mapping["combined"][word]
+        else:
+            normalized_word = mapping.at[word, "level_3"]
         return normalized_word
     else:
         return word
 
 
-def normalize_aromas(sentences: List[str], descriptor_mapping: pd.DataFrame) -> List[str]:
+def normalize_aromas(
+    sentences: List[str], descriptor_mapping: pd.DataFrame
+) -> List[str]:
     normalized_sentences = []
     for sent in sentences:
         normalized_sentence = []
@@ -94,10 +103,47 @@ def normalize_aromas(sentences: List[str], descriptor_mapping: pd.DataFrame) -> 
     return normalized_sentences
 
 
-def wine_food_word2vec(wine_sentences: List[str], food_sentences: List[str], descriptor_mapping: pd.DataFrame, save_path: str) -> None:
+def wine_food_word2vec(
+    wine_sentences: List[str],
+    food_sentences: List[str],
+    descriptor_mapping: pd.DataFrame,
+    save_path: str,
+) -> None:
     normalized_wine_sentences = normalize_aromas(wine_sentences, descriptor_mapping)
-    aroma_descriptor_mapping = descriptor_mapping.loc[descriptor_mapping['type'] == 'aroma']
-    normalized_food_sentences = normalize_aromas(food_sentences, aroma_descriptor_mapping)
+    aroma_descriptor_mapping = descriptor_mapping.loc[
+        descriptor_mapping["type"] == "aroma"
+    ]
+    normalized_food_sentences = normalize_aromas(
+        food_sentences, aroma_descriptor_mapping
+    )
     normalized_sentences = normalized_wine_sentences + normalized_food_sentences
-    wine_word2vec_model = Word2Vec(sentences=normalized_sentences, vector_size=300, min_count=8)
+    wine_word2vec_model = Word2Vec(
+        sentences=normalized_sentences, vector_size=300, min_count=8
+    )
     wine_word2vec_model.save(save_path)
+
+
+def normalize_nonaromas(
+    wine_reviews: List[str], descriptor_mapping: pd.DataFrame, wine_trigram_model: Phraser
+) -> List:
+    descriptor_mappings = dict()
+    for c in CORE_DESCRIPTORS:
+        col = ("primary taste", "type")[c == "aroma"]
+        descriptor_mappings[c] = descriptor_mapping.loc[descriptor_mapping[col] == c]
+
+    review_descriptors = []
+    for review in wine_reviews:
+        taste_descriptors = []
+        normalized_review = normalize_text(review)
+        phrased_review = wine_trigram_model[normalized_review]
+
+        for c in CORE_DESCRIPTORS:
+            descriptors_only = [
+                return_mapped_descriptor(word, descriptor_mappings[c], taste=True)
+                for word in phrased_review
+            ]
+            no_nones = [str(d).strip() for d in descriptors_only if d is not None]
+            descriptorized_review = " ".join(no_nones)
+            taste_descriptors.append(descriptorized_review)
+        review_descriptors.append(taste_descriptors)
+    return review_descriptors
