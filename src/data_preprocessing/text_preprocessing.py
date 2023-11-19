@@ -9,6 +9,7 @@ from gensim.models.phrases import Phraser, Phrases
 from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
 from nltk.tokenize import word_tokenize
+from scipy.spatial import distance
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 from src.consts.food import CORE_TASTES
@@ -325,7 +326,7 @@ def compute_core_tastes_distances(
     for taste in CORE_TASTES.keys():
         taste_distances = {}
         for food, food_vector in food_embedding_dict.items():
-            similarity = 1 - spatial.distance.cosine(
+            similarity = 1 - distance.cosine(
                 core_tastes_embeddings[taste], food_vector
             )
             taste_distances[food] = similarity
