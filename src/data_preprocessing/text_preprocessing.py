@@ -288,7 +288,7 @@ def make_food_embedding_dict(
             food_vecs_dict[food] = food_vec
         except:
             continue
-    return
+    return food_vecs_dict
 
 
 def compute_core_tastes_embeddings(wine_word2vec_model: Word2Vec):
