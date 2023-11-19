@@ -1,16 +1,33 @@
+import csv
 import string
 from typing import List
 
 import numpy as np
 import pandas as pd
 from gensim.models import Word2Vec
-from gensim.models.phrases import Phrases, Phraser
+from gensim.models.phrases import Phraser, Phrases
 from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
 from nltk.tokenize import word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
 
+from src.consts.food import CORE_TASTES
 from src.consts.wine import CORE_DESCRIPTORS
+
+
+def read_csv_to_list_of_lists(file_path) -> List[List[str]]:
+    """
+    Read a csv file and return a list of lists.
+
+    :param file_path: path to csv file
+    """
+    data = []
+    with open(file_path, "r", newline="") as csvfile:
+        csv_reader = csv.reader(csvfile)
+        for row in csv_reader:
+            if any(row):
+                data.append(row)
+    return data
 
 
 def normalize_text(raw_text: str) -> List[str]:
@@ -70,7 +87,6 @@ def extract_phrases(
     """
     bigram_model = Phrases(sentences_normalized, min_count=100)
     bigrams = [bigram_model[sent] for sent in sentences_normalized]
-    # NOTE: is it really tri-gram every time?
     trigram_model = Phrases(bigrams, min_count=50)
     phrased_sentences = [trigram_model[sent] for sent in bigrams]
 
@@ -82,6 +98,14 @@ def extract_phrases(
 def return_mapped_descriptor(
     word: str, mapping: pd.DataFrame, taste: bool = False
 ) -> str:
+    """
+    Return the mapped descriptor for a given word.
+
+    :param word: word to map
+    :param mapping: mapping dataframe
+    :param taste: whether to map taste descriptors
+    :return: mapped descriptor
+    """
     if word in list(mapping.index):
         if taste:
             normalized_word = mapping["combined"][word]
@@ -97,6 +121,13 @@ def return_mapped_descriptor(
 def normalize_aromas(
     sentences: List[str], descriptor_mapping: pd.DataFrame
 ) -> List[str]:
+    """
+    Normalize aroma descriptors in a list of sentences.
+
+    :param sentences: list of sentences to normalize
+    :param descriptor_mapping: mapping dataframe
+    :return: list of normalized aroma descriptors
+    """
     normalized_sentences = []
     for sent in sentences:
         normalized_sentence = []
@@ -113,6 +144,15 @@ def wine_food_word2vec(
     descriptor_mapping: pd.DataFrame,
     save_path: str,
 ) -> None:
+    """
+    Train a word2vec model on wine and food sentences.
+
+    :param wine_sentences: list of wine sentences
+    :param food_sentences: list of food sentences
+    :param descriptor_mapping: mapping dataframe
+    :param save_path: path to save the model
+    :return: None
+    """
     normalized_wine_sentences = normalize_aromas(wine_sentences, descriptor_mapping)
     aroma_descriptor_mapping = descriptor_mapping.loc[
         descriptor_mapping["type"] == "aroma"
@@ -131,7 +171,15 @@ def normalize_nonaromas(
     wine_reviews: List[str],
     descriptor_mapping: pd.DataFrame,
     wine_trigram_model: Phraser,
-) -> List:
+) -> List[List[str]]:
+    """
+    Normalize non-aroma descriptors in a list of wine reviews.
+
+    :param wine_reviews: list of wine reviews
+    :param descriptor_mapping: mapping dataframe
+    :param wine_trigram_model: trigram model of wine reviews
+    :return: list of normalized non-aroma descriptors for each sentence of each wine review
+    """
     descriptor_mappings = dict()
     for c in CORE_DESCRIPTORS:
         col = ("primary taste", "type")[c == "aroma"]
@@ -184,7 +232,9 @@ def calculate_tfidf_embeddings(
                     except:
                         continue
             try:
-                review_vector = sum(weighted_review_terms) / len(weighted_review_terms) # np.mean
+                review_vector = sum(weighted_review_terms) / len(
+                    weighted_review_terms
+                )  # np.mean
                 review_vector = review_vector[0]
             except:
                 review_vector = np.nan
@@ -204,3 +254,119 @@ def calculate_tfidf_embeddings(
     )
     wine_df_vecs = pd.concat([df, review_descriptors_df, review_vecs_df], axis=1)
     return wine_df_vecs
+
+
+def preprocess_food_list(food_list: List[str], trigram_model: Phraser) -> List[str]:
+    """
+    Preprocesses a list of foods by normalizing the text and extracting trigrams.
+
+    :param food_list: list of foods
+    :param trigram_model: trigram model
+    :return: list of preprocessed foods
+    """
+    food_list = [normalize_text(f) for f in food_list]
+    food_list_preprocessed = [trigram_model[f][0] for f in food_list]
+    return list(set(food_list_preprocessed))
+
+
+def make_food_embedding_dict(
+    food_list: List[str], wine_word2vec_model: Word2Vec
+) -> dict:
+    """
+    Creates a dictionary of food embeddings.
+
+    :param food_list: list of foods
+    :param wine_word2vec_model: word2vec model
+    :return: dictionary of food embeddings
+    """
+    word_vectors = wine_word2vec_model.wv
+    food_vecs_dict = {}
+    for food in food_list:
+        try:
+            food_vec = word_vectors[food]
+            food_vecs_dict[food] = food_vec
+        except:
+            continue
+    return
+
+
+def compute_core_tastes_embeddings(wine_word2vec_model: Word2Vec):
+    """
+    Compute the average vector of the core tastes.
+
+    :param wine_word2vec_model: word2vec model
+    :return: dictionary of core tastes and their average vector
+    """
+    word_vectors = wine_word2vec_model.wv
+    average_taste_vecs = {}
+    for taste, keywords in CORE_TASTES.items():
+        all_keyword_vecs = []
+        for keyword in keywords:
+            keyword_vec = word_vectors[keyword]
+            all_keyword_vecs.append(keyword_vec)
+
+        avg_taste_vec = np.average(all_keyword_vecs, axis=0)
+        average_taste_vecs[taste] = avg_taste_vec
+    return average_taste_vecs
+
+
+def compute_core_tastes_distances(
+    food_embedding_dict: dict, core_tastes_embeddings: dict[str, np.ndarray]
+) -> dict[dict[str, float]]:
+    """
+    Compute the distances between the core tastes and the food embeddings.
+
+    :param food_embedding_dict: dictionary of food embeddings
+    :param core_tastes_embeddings: dictionary of core tastes and their average vector
+    :return: dictionary of core tastes and their distances to the food embeddings
+    """
+    core_tastes_distances = {}
+
+    for taste in CORE_TASTES.keys():
+        taste_distances = {}
+        for food, food_vector in food_embedding_dict.items():
+            similarity = 1 - spatial.distance.cosine(
+                core_tastes_embeddings[taste], food_vector
+            )
+            taste_distances[food] = similarity
+
+        core_tastes_distances[taste] = taste_distances
+    return core_tastes_distances
+
+
+def get_food_nonaroma_info(
+    core_tastes_distances: dict[dict[str, float]],
+    average_taste_vecs: dict[str, np.ndarray],
+    verbose: bool = False,
+) -> pd.DataFrame:
+    """
+    Find the closest and farthest food items for each core taste and the average vector of the core tastes.
+
+    :param core_tastes_distances: dictionary of core tastes and their distances to the food embeddings
+    :param average_taste_vecs: dictionary of core tastes and their average vector
+    :param verbose: whether to print the results
+    :return: dictionary of core tastes and their closest and farthest food items and average vector
+    """
+    food_nonaroma_info = {}
+
+    for taste in CORE_TASTES.keys():
+        farthest, farthest_distance = min(
+            core_tastes_distances[taste].items(), key=lambda x: x[1]
+        )
+        closest, closest_distance = max(
+            core_tastes_distances[taste].items(), key=lambda x: x[1]
+        )
+
+        if verbose:
+            print(f"Core taste: {taste}")
+            print(f"Closest item: {closest} - {closest_distance}")
+            print(f"Farthest item: {farthest} - {farthest_distance}")
+
+        food_nonaroma_info[taste] = {
+            "farthest": farthest_distance,
+            "closest": closest_distance,
+            "average_vec": average_taste_vecs[taste],
+        }
+
+    food_aroma_info_df = pd.DataFrame.from_dict(food_nonaroma_info).T
+    return food_aroma_info_df
