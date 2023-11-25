@@ -257,6 +257,19 @@ def calculate_tfidf_embeddings(
     return wine_df_vecs
 
 
+def preprocess_food_item(food_item: str, trigram_model: Phraser) -> List[str]:
+    """
+    Preprocesses a food item by normalizing the text and extracting trigrams.
+
+    :param food_item: food item
+    :param trigram_model: trigram model
+    :return: preprocessed food item
+    """
+    food_item = normalize_text(food_item)
+    food_item_preprocessed = trigram_model[food_item][0]
+    return food_item_preprocessed
+
+
 def preprocess_food_list(food_list: List[str], trigram_model: Phraser) -> List[str]:
     """
     Preprocesses a list of foods by normalizing the text and extracting trigrams.
@@ -265,8 +278,7 @@ def preprocess_food_list(food_list: List[str], trigram_model: Phraser) -> List[s
     :param trigram_model: trigram model
     :return: list of preprocessed foods
     """
-    food_list = [normalize_text(f) for f in food_list]
-    food_list_preprocessed = [trigram_model[f][0] for f in food_list]
+    food_list_preprocessed = [preprocess_food_item(f, trigram_model) for f in food_list]
     return list(set(food_list_preprocessed))
 
 
@@ -326,9 +338,7 @@ def compute_core_tastes_distances(
     for taste in CORE_TASTES.keys():
         taste_distances = {}
         for food, food_vector in food_embedding_dict.items():
-            similarity = 1 - distance.cosine(
-                core_tastes_embeddings[taste], food_vector
-            )
+            similarity = 1 - distance.cosine(core_tastes_embeddings[taste], food_vector)
             taste_distances[food] = similarity
 
         core_tastes_distances[taste] = taste_distances
