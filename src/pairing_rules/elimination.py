@@ -1,4 +1,7 @@
-def weight_rule(df, food_nonaromas):
+import pandas as pd
+
+
+def weight_rule(df: pd.DataFrame, food_nonaromas: pd.DataFrame) -> pd.DataFrame:
     # Rule 1: the wine should have at least the same body as the food
     df = df.loc[
         (df["weight"] >= food_nonaromas["weight"] - 1)
@@ -7,26 +10,26 @@ def weight_rule(df, food_nonaromas):
     return df
 
 
-def acidity_rule(df, food_nonaromas):
+def acidity_rule(df: pd.DataFrame, food_nonaromas: pd.DataFrame) -> pd.DataFrame:
     # Rule 2: the wine should be at least as acidic as the food
     df = df.loc[df["acid"] >= food_nonaromas["acid"]]
     return df
 
 
-def sweetness_rule(df, food_nonaromas):
+def sweetness_rule(df: pd.DataFrame, food_nonaromas: pd.DataFrame) -> pd.DataFrame:
     # Rule 3: the wine should be at least as sweet as the food
     df = df.loc[df["sweet"] >= food_nonaromas["sweet"]]
     return df
 
 
-def bitterness_rule(df, food_nonaromas):
+def bitterness_rule(df: pd.DataFrame, food_nonaromas: pd.DataFrame) -> pd.DataFrame:
     # Rule 4: bitter wines do not pair well with bitter foods
     if food_nonaromas["bitter"] >= 0.75:
         df = df.loc[df["bitter"] < 0.5]
     return df
 
 
-def bitter_salt_rule(df, food_nonaromas):
+def bitter_salt_rule(df: pd.DataFrame, food_nonaromas: pd.DataFrame) -> pd.DataFrame:
     # Rule 5: bitter and salt do not go well together
     if food_nonaromas["bitter"] >= 0.75:
         df = df.loc[(df["salt"] < 0.5)]
@@ -35,7 +38,7 @@ def bitter_salt_rule(df, food_nonaromas):
     return df
 
 
-def acid_bitter_rule(df, food_nonaromas):
+def acid_bitter_rule(df: pd.DataFrame, food_nonaromas: pd.DataFrame) -> pd.DataFrame:
     # Rule 6: acid and bitterness do not go well together
     if food_nonaromas["acid"] >= 0.75:
         df = df.loc[(df["bitter"] < 0.5)]
@@ -44,7 +47,7 @@ def acid_bitter_rule(df, food_nonaromas):
     return df
 
 
-def acid_piquant_rule(df, food_nonaromas):
+def acid_piquant_rule(df: pd.DataFrame, food_nonaromas: pd.DataFrame) -> pd.DataFrame:
     # Rule 7: acid and piquant do not go well together
     if food_nonaromas["acid"] >= 0.75:
         df = df.loc[(df["piquant"] < 0.5)]
@@ -53,7 +56,7 @@ def acid_piquant_rule(df, food_nonaromas):
     return df
 
 
-def eliminate_not_well_together(wine_df, food_nonaromas):
+def eliminate_not_well_together(wine_df: pd.DataFrame, food_nonaromas: pd.DataFrame) -> pd.DataFrame:
     df = weight_rule(wine_df, food_nonaromas)
     list_of_tests = [
         acidity_rule,
