@@ -25,34 +25,38 @@ def create_wine_nodes(wine_items: list[str], max_id: int) -> pd.DataFrame:
 
 
 def create_food_wine_edges(
-    food_wine_similarity_df: pd.DataFrame, nodes_with_wine_df: pd.DataFrame
+    food_wine_pairing_df: pd.DataFrame, nodes_with_wine_df: pd.DataFrame
 ) -> pd.DataFrame:
     """
-    Create food-wine edges from food_wine_similarity_df.
+    Create food-wine edges from food_wine_pairing_df.
 
-    :param food_wine_similarity_df: food-wine similarity dataframe
+    :param food_wine_pairing_df: food-wine similarity dataframe
     :param nodes_with_wine_df: nodes dataframe with both food and wine nodes
     :return: food wine edges dataframe
     """
     edges = []
-    for index, row in food_wine_similarity_df.iterrows():
+    for index, row in food_wine_pairing_df.iterrows():
         food_name = row["food_name"]
-        wine_name = row["wine_item"]
-        similarity = row["similarity"]
 
-        food_node_id = nodes_with_wine_df[nodes_with_wine_df["name"] == food_name][
-            "node_id"
-        ].values[0]
-        wine_node_id = nodes_with_wine_df[nodes_with_wine_df["name"] == wine_name][
-            "node_id"
-        ].values[0]
-        new_edge = {
-            "id_1": food_node_id,
-            "id_2": wine_node_id,
-            "score": similarity,
-            "edge_type": "ingr-wine",
-        }
-        edges.append(new_edge)
+        wine_columns = sorted(
+            [col for col in food_wine_pairing_df.columns if col.startswith("top")]
+        )
+        for i, wine_column in enumerate(wine_columns, start=1):
+            wine_name = row[wine_column]
+            if wine_name is not None:
+                food_node_id = nodes_with_wine_df[
+                    nodes_with_wine_df["name"] == food_name
+                ]["node_id"].values[0]
+                wine_node_id = nodes_with_wine_df[
+                    nodes_with_wine_df["name"] == wine_name
+                ]["node_id"].values[0]
+                new_edge = {
+                    "id_1": food_node_id,
+                    "id_2": wine_node_id,
+                    "score": 1 / i,  # TODO: add score as a similarity?
+                    "edge_type": "ingr-wine",
+                }
+                edges.append(new_edge)
 
     edges_df = pd.DataFrame(edges)
     return edges_df
