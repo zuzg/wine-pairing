@@ -1,9 +1,8 @@
 import pickle
+from copy import deepcopy
 
 import numpy as np
 import pandas as pd
-
-from copy import deepcopy
 
 
 def create_wine_nodes(wine_items: list[str], max_id: int) -> pd.DataFrame:
@@ -103,7 +102,7 @@ def split_unanonimize_nodes(
 
 
 def pair_item_with_category(
-    item: str,
+    items: str,
     fg_embed_dict: dict[dict[np.ndarray]],
     pairing_category: str = "wine",
     top_n: int = 1,
@@ -117,27 +116,43 @@ def pair_item_with_category(
     :param top_n: number of items to return
     :return: list of items
     """
+    item_list = items.split("+")
+    item_embeddings = {}
     fg_embed_dict = deepcopy(fg_embed_dict)
-    ingredient_category = None
-    for key in fg_embed_dict.keys():
-        if item in fg_embed_dict[key].keys():
-            ingredient_category = key
-            break
 
-    if ingredient_category is None:
-        raise ValueError(
-            f"Item {item} not found in any category: {fg_embed_dict.keys()}"
-        )
+    # TODO: change wine_ids (remove unnecessary spaces, ',' -> '_' to unify items)
+    for item in item_list:
+        ingredient_category = None
+        for key in fg_embed_dict.keys():
+            if item in fg_embed_dict[key].keys():
+                ingredient_category = key
+                item_embeddings[item] = fg_embed_dict[ingredient_category][item]
+                if ingredient_category == pairing_category:
+                    del fg_embed_dict[ingredient_category][item]
+                break
+            elif item.lower().strip().replace(" ", "_") in fg_embed_dict[key].keys():
+                item_lower = item.lower().strip().replace(" ", "_")
+                ingredient_category = key
+                item_embeddings[item] = fg_embed_dict[ingredient_category][item_lower]
+                if ingredient_category == pairing_category:
+                    del fg_embed_dict[ingredient_category][item_lower]
+                break
+        if ingredient_category is None:
+            raise ValueError(
+                f"Item {item} not found in any category: {fg_embed_dict.keys()}"
+            )
+        if len(item_list) > 1 and ingredient_category != "ingredient":
+            raise ValueError(
+                f"Multiple items not supported for non-ingredient items: {item_list}"
+            )
 
-    item_embedding = fg_embed_dict[ingredient_category][item]
-    if ingredient_category == pairing_category:
-        del fg_embed_dict[ingredient_category][item]
+    sum_item_embedding = np.sum(list(item_embeddings.values()), axis=0)
 
     pairing_category_embeddings = fg_embed_dict[pairing_category].values()
     pairing_category_names = fg_embed_dict[pairing_category].keys()
     pairing_category_embeddings = np.array(list(pairing_category_embeddings))
     pairing_category_names = np.array(list(pairing_category_names))
-    distances = np.linalg.norm(item_embedding - pairing_category_embeddings, axis=1)
+    distances = np.linalg.norm(sum_item_embedding - pairing_category_embeddings, axis=1)
 
     min_idxs = np.argsort(distances)[:top_n]
     return pairing_category_names[min_idxs].tolist()
