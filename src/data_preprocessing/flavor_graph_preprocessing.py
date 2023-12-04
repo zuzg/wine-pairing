@@ -47,7 +47,7 @@ def create_food_wine_edges(
         )
         for i, wine_column in enumerate(wine_columns, start=1):
             wine_name = row[wine_column]
-            if wine_name is not None:
+            if wine_name and str(wine_name) != "nan":
                 food_node_id = nodes_with_wine_df[
                     nodes_with_wine_df["name"] == food_name
                 ]["node_id"].values[0]
