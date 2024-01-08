@@ -1,4 +1,4 @@
-VARIETY_MAPPING = {
+VARIETY_MAPPING: dict[str, str] = {
     "Shiraz": "Syrah",
     "Pinot Gris": "Pinot Grigio",
     "Pinot Grigio/Gris": "Pinot Grigio",
@@ -32,7 +32,7 @@ VARIETY_MAPPING = {
     "AragonÃªs, Tempranillo": "Aragonez, Tempranillo",
 }
 
-CORE_DESCRIPTORS = [
+CORE_DESCRIPTORS: list[str] = [
     "aroma",
     "weight",
     "sweet",

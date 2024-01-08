@@ -1,6 +1,5 @@
 import csv
 import string
-from typing import List
 
 import numpy as np
 import pandas as pd
@@ -16,7 +15,7 @@ from src.consts.food import CORE_TASTES
 from src.consts.wine import CORE_DESCRIPTORS
 
 
-def read_csv_to_list_of_lists(file_path) -> List[List[str]]:
+def read_csv_to_list_of_lists(file_path) -> list[list[str]]:
     """
     Read a csv file and return a list of lists.
 
@@ -31,7 +30,7 @@ def read_csv_to_list_of_lists(file_path) -> List[List[str]]:
     return data
 
 
-def normalize_text(raw_text: str) -> List[str]:
+def normalize_text(raw_text: str) -> list[str]:
     """
     Normalize a text.
 
@@ -62,7 +61,7 @@ def normalize_text(raw_text: str) -> List[str]:
         return ""
 
 
-def normalize_sentences(sentences_tokenized: List[str]) -> List[str]:
+def normalize_sentences(sentences_tokenized: list[str]) -> list[str]:
     """
     Normalize a list of sentences.
 
@@ -77,8 +76,8 @@ def normalize_sentences(sentences_tokenized: List[str]) -> List[str]:
 
 
 def extract_phrases(
-    sentences_normalized: List[str], save_path: str | None = None
-) -> List[str]:
+    sentences_normalized: list[str], save_path: str | None = None
+) -> list[str]:
     """
     Extract phrases from a list of sentences.
 
@@ -120,8 +119,8 @@ def return_mapped_descriptor(
 
 
 def normalize_aromas(
-    sentences: List[str], descriptor_mapping: pd.DataFrame
-) -> List[str]:
+    sentences: list[str], descriptor_mapping: pd.DataFrame
+) -> list[str]:
     """
     Normalize aroma descriptors in a list of sentences.
 
@@ -140,8 +139,8 @@ def normalize_aromas(
 
 
 def wine_food_word2vec(
-    wine_sentences: List[str],
-    food_sentences: List[str],
+    wine_sentences: list[str],
+    food_sentences: list[str],
     descriptor_mapping: pd.DataFrame,
     save_path: str,
 ) -> None:
@@ -169,10 +168,10 @@ def wine_food_word2vec(
 
 
 def normalize_nonaromas(
-    wine_reviews: List[str],
+    wine_reviews: list[str],
     descriptor_mapping: pd.DataFrame,
     wine_trigram_model: Phraser,
-) -> List[List[str]]:
+) -> list[list[str]]:
     """
     Normalize non-aroma descriptors in a list of wine reviews.
 
@@ -205,7 +204,7 @@ def normalize_nonaromas(
 
 
 def calculate_tfidf_embeddings(
-    df: pd.DataFrame, review_descriptors: List, wine_word2vec_model: Word2Vec
+    df: pd.DataFrame, review_descriptors: list, wine_word2vec_model: Word2Vec
 ) -> pd.DataFrame:
     taste_descriptors = []
     taste_vectors = []
@@ -257,7 +256,7 @@ def calculate_tfidf_embeddings(
     return wine_df_vecs
 
 
-def preprocess_food_item(food_item: str, trigram_model: Phraser) -> List[str]:
+def preprocess_food_item(food_item: str, trigram_model: Phraser) -> list[str]:
     """
     Preprocesses a food item by normalizing the text and extracting trigrams.
 
@@ -270,7 +269,7 @@ def preprocess_food_item(food_item: str, trigram_model: Phraser) -> List[str]:
     return food_item_preprocessed
 
 
-def preprocess_food_list(food_list: List[str], trigram_model: Phraser) -> List[str]:
+def preprocess_food_list(food_list: list[str], trigram_model: Phraser) -> list[str]:
     """
     Preprocesses a list of foods by normalizing the text and extracting trigrams.
 
@@ -283,7 +282,7 @@ def preprocess_food_list(food_list: List[str], trigram_model: Phraser) -> List[s
 
 
 def make_food_embedding_dict(
-    food_list: List[str], wine_word2vec_model: Word2Vec
+    food_list: list[str], wine_word2vec_model: Word2Vec
 ) -> dict:
     """
     Creates a dictionary of food embeddings.

@@ -1,4 +1,4 @@
-CORE_TASTES = {
+CORE_TASTES: dict[str, list[str]] = {
     "weight": [
         "heavy",
         "cassoulet",

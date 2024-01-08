@@ -6,6 +6,14 @@ from matplotlib.gridspec import GridSpec
 
 
 def make_radio_chart(data: dict[float], title: str, subtitle: str, color: str) -> None:
+    """
+    Create a radar chart to visually represent multi-dimensional data.
+
+    :param data: A dictionary where keys are categories and values are corresponding data points.
+    :param title: The main title of the radar chart.
+    :param subtitle: A subtitle to be included below the main title.
+    :param color: The color of the radar chart.
+    """
     data = deepcopy(data)
     weight = data["weight"]
     del data["weight"]
@@ -55,7 +63,14 @@ def make_radio_chart(data: dict[float], title: str, subtitle: str, color: str) -
 
 
 def add_weight_line(gs: GridSpec, n: int, value: float, color: str) -> None:
-    """Add a line to the radio chart to indicate the weight of the food."""
+    """
+    Add a reference line to a radar chart to indicate the weight of a specific feature.
+
+    :param gs: The GridSpec specifying the layout of subplots in the radar chart.
+    :param n: The position of the subplot in the radar chart where the weight line will be added.
+    :param value: The value representing the weight of the feature. The line will be positioned accordingly.
+    :param color: The color of the reference line and marker.
+    """
     ax = plt.subplot(gs[n])
     ax.set_xlim(-1, 2)
     ax.set_ylim(0, 3)
@@ -65,16 +80,12 @@ def add_weight_line(gs: GridSpec, n: int, value: float, color: str) -> None:
     y = 1
     height = 0.2
 
-    # draw a lines (horizontal & vertical)
     plt.hlines(y, xmin, xmax)
     plt.vlines(xmin, y - height / 2.0, y + height / 2.0)
     plt.vlines(xmax, y - height / 2.0, y + height / 2.0)
 
-    # draw a point on the line
-    px = value
-    plt.plot(px, y, "ko", ms=10, mfc=color)
+    plt.plot(value, y, "ko", ms=10, mfc=color)
 
-    # add text
     plt.text(
         xmin - 0.1,
         y,
@@ -91,5 +102,4 @@ def add_weight_line(gs: GridSpec, n: int, value: float, color: str) -> None:
         fontsize=11,
         color="grey",
     )
-
     plt.axis("off")

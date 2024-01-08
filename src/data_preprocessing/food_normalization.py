@@ -1,6 +1,5 @@
 import ast
 import re
-from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -9,14 +8,29 @@ from scipy import spatial
 
 
 def minmax_scaler(val: float, minval: float, maxval: float) -> float:
+    """
+    Scale a numerical value using min-max scaling within a specified range.
+
+    :param val: The numerical value to be scaled.
+    :param minval: The minimum value of the range for scaling.
+    :param maxval: The maximum value of the range for scaling.
+    :return: The normalized value within the specified range.
+    """
     val = max(min(val, maxval), minval)
     normalized_val = (val - minval) / (maxval - minval)
     return normalized_val
 
 
 def calculate_avg_food_vec(
-    sample_foods: List[str], word_vectors: KeyedVectors
+    sample_foods: list[str], word_vectors: KeyedVectors
 ) -> np.ndarray:
+    """
+    Calculate the average vector representation for a list of sample foods using word vectors.
+
+    :param sample_foods: A list of food items for which vector representations will be averaged.
+    :param word_vectors: Pre-trained word vectors, such as those obtained from Word2Vec or FastText.
+    :return: The average vector representation for the list of sample foods.
+    """
     sample_food_vecs = []
     for s in sample_foods:
         sample_food_vec = word_vectors[s]
@@ -28,6 +42,14 @@ def calculate_avg_food_vec(
 def nonaroma_values(
     nonaroma: str, average_food_embedding: np.ndarray, food_nonaroma_infos: pd.DataFrame
 ) -> float:
+    """
+    Calculate the scaled similarity between a non-aromatic attribute and the average food embedding.
+
+    :param nonaroma: The non-aromatic attribute for which similarity is calculated.
+    :param average_food_embedding: The average vector representation of a set of sample foods.
+    :param food_nonaroma_infos: DataFrame containing information about non-aromatic attributes.
+    :return: Scaled similarity between the non-aromatic attribute and the average food embedding.
+    """
     average_taste_vec = food_nonaroma_infos.at[nonaroma, "average_vec"]
     average_taste_vec = re.sub("\s+", ",", average_taste_vec)
     average_taste_vec = average_taste_vec.replace("[,", "[")
@@ -43,12 +65,24 @@ def nonaroma_values(
 
 
 def get_food_descriptors(
-    sample_foods: List[str],
+    sample_foods: list[str],
     word_vectors: KeyedVectors,
     food_nonaroma_infos: pd.DataFrame,
-) -> Tuple[Dict[str, float], np.ndarray]:
+) -> tuple[dict[str, float], np.ndarray]:
+    """
+    Retrieve non-aromatic descriptors and the average vector representation for a list of sample foods.
+
+    :param sample_foods: A list of food items for which descriptors and an average vector will be obtained.
+    :param word_vectors: Pre-trained word vectors, such as those obtained from Word2Vec or FastText.
+    :param food_nonaroma_infos: DataFrame containing information about non-aromatic attributes.
+    :return: A tuple containing:
+      - A dictionary of non-aromatic descriptors and their scaled similarity scores.
+      - The average vector representation for the list of sample foods.
+    """
     food_nonaromas = dict()
     average_food_embedding = calculate_avg_food_vec(sample_foods, word_vectors)
     for nonaroma in ["weight", "sweet", "acid", "salt", "piquant", "fat", "bitter"]:
-        food_nonaromas[nonaroma] = nonaroma_values(nonaroma, average_food_embedding, food_nonaroma_infos)
+        food_nonaromas[nonaroma] = nonaroma_values(
+            nonaroma, average_food_embedding, food_nonaroma_infos
+        )
     return food_nonaromas, average_food_embedding

@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 import pandas as pd
 from gensim.models import KeyedVectors
 
@@ -15,7 +13,7 @@ def generate_single_pairing(
     word_vectors: KeyedVectors,
     food_nonaroma_infos: pd.DataFrame,
     K: int,
-) -> Optional[List[str]]:
+) -> list[str] | None:
     """
     Generate wine-pairing for single food item
 
@@ -24,6 +22,7 @@ def generate_single_pairing(
     :param word_vectors: word_vectors
     :param food_nonaroma infos: df with nonaromas
     :param K: top K pairings to return
+    :return: list of top K recommendations
     """
     try:
         food_nonaromas, aroma_embedding = get_food_descriptors(
@@ -59,7 +58,7 @@ def generate_single_pairing(
 
 
 def generate_pairs(
-    food_list: List[str],
+    food_list: list[str],
     wine_vectors: pd.DataFrame,
     word_vectors: KeyedVectors,
     food_nonaroma_infos: pd.DataFrame,

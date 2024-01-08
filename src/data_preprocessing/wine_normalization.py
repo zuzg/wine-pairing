@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -8,7 +8,13 @@ from sklearn.decomposition import PCA
 from src.consts.wine import CORE_DESCRIPTORS
 
 
-def normalize_geo(wine_df_vecs: pd.DataFrame) -> List[Tuple[str]]:
+def normalize_geo(wine_df_vecs: pd.DataFrame) -> list[tuple[str]]:
+    """
+    Normalize geographical information in a DataFrame containing wine vectors.
+
+    :param wine_df_vecs: DataFrame containing wine vectors with 'Variety' and 'Location' columns.
+    :return: A list of unique tuples representing normalized geographical information.
+    """
     normalized_geos = []
     l = list(zip(wine_df_vecs["Variety"], wine_df_vecs["Location"]))
     for tup in l:
@@ -17,7 +23,13 @@ def normalize_geo(wine_df_vecs: pd.DataFrame) -> List[Tuple[str]]:
     return normalized_geos
 
 
-def get_average_vectors(wine_df_vecs: pd.DataFrame) -> Dict[str, np.ndarray]:
+def get_average_vectors(wine_df_vecs: pd.DataFrame) -> dict[str, np.ndarray]:
+    """
+    Get average vectors for wine df
+
+    :param wine_df_vecs: DataFrame with wine
+    :return: Dict with average vectors
+    """
     avg_taste_vecs = dict()
     for t in CORE_DESCRIPTORS:
         review_arrays = wine_df_vecs[t].dropna()
@@ -28,10 +40,22 @@ def get_average_vectors(wine_df_vecs: pd.DataFrame) -> Dict[str, np.ndarray]:
 
 def subset_wine_vectors(
     wine_df_vecs: pd.DataFrame,
-    avg_taste_vecs: Dict[str, np.ndarray],
-    list_of_varieties: List[str],
+    avg_taste_vecs: dict[str, np.ndarray],
+    list_of_varieties: list[str],
     wine_attribute: str,
-) -> List[List[Any]]:
+) -> list[list[Any]]:
+    """
+    Subset wine vectors and compute aggregated attributes for specified varieties and a specific attribute.
+
+    :param wine_df_vecs: DataFrame containing wine vectors with 'Variety', 'Location', and other attributes.
+    :param avg_taste_vecs: Dictionary containing average taste vectors for different attributes.
+    :param list_of_varieties: List of tuples representing unique combinations of 'Variety' and 'Location'.
+    :param wine_attribute: Specific wine attribute for which vectors and descriptors are computed.
+    :return: A list of lists containing information for each specified variety, including:
+      - Variety and Location tuple.
+      - Average vector representation for the specified attribute.
+      - Top descriptors and their normalized frequencies.
+    """
     wine_variety_vectors = []
     for v in list_of_varieties:
         one_var_only = wine_df_vecs.loc[
@@ -61,11 +85,23 @@ def subset_wine_vectors(
 
 def pca_wine_variety(
     wine_df_vecs: pd.DataFrame,
-    avg_taste_vecs: Dict[str, np.ndarray],
-    list_of_varieties: List[str],
+    avg_taste_vecs: dict[str, np.ndarray],
+    list_of_varieties: list[str],
     wine_attribute: str,
     pca: bool = True,
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Perform PCA on wine vectors for specified varieties and a specific attribute.
+
+    :param wine_df_vecs: DataFrame containing wine vectors with 'Variety', 'Location', and other attributes.
+    :param avg_taste_vecs: Dictionary containing average taste vectors for different attributes.
+    :param list_of_varieties: List of tuples representing unique combinations of 'Variety' and 'Location'.
+    :param wine_attribute: Specific wine attribute for which vectors and descriptors are computed.
+    :param pca: Flag indicating whether to apply Principal Component Analysis (PCA) to reduce dimensionality. Default is True.
+    :return: A tuple containing:
+      - DataFrame with PCA-transformed wine vectors for specified varieties.
+      - DataFrame with descriptors and their frequencies for specified varieties.
+    """
     wine_var_vectors = subset_wine_vectors(
         wine_df_vecs, avg_taste_vecs, list_of_varieties, wine_attribute
     )
@@ -93,7 +129,15 @@ def pca_wine_variety(
 
 def normalize_aromas_nonaromas(
     wine_df_vecs: pd.DataFrame,
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Normalize aroma and non-aroma descriptors for wine vectors.
+
+    :param wine_df_vecs: DataFrame containing wine vectors with 'Variety', 'Location', and other attributes.
+    :return: A tuple containing:
+      - DataFrame with PCA-transformed aroma descriptors and their frequencies for specified varieties.
+      - DataFrame with PCA-transformed non-aroma descriptors and their frequencies for specified varieties.
+    """
     nonaromas = [
         "weight",
         "sweet",
@@ -122,6 +166,12 @@ def normalize_aromas_nonaromas(
 
 
 def save_top_descriptors(aroma_descriptors: pd.DataFrame) -> None:
+    """
+    Save top aroma descriptors and their relative frequencies to a CSV file.
+
+    :param aroma_descriptors: DataFrame containing aroma descriptors and their frequencies.
+    :return: The method saves the DataFrame to a CSV file named 'wine_variety_descriptors.csv'.
+    """
     aroma_descriptors_copy = aroma_descriptors.copy()
     aroma_descriptors_copy.set_index("index", inplace=True)
     aroma_descriptors_copy.dropna(inplace=True)
@@ -134,8 +184,15 @@ def save_top_descriptors(aroma_descriptors: pd.DataFrame) -> None:
 
 
 def normalize_nonaroma_scalers(
-    df: pd.DataFrame, cols_to_normalize: List[str]
+    df: pd.DataFrame, cols_to_normalize: list[str]
 ) -> pd.DataFrame:
+    """
+    Normalize specified columns in a DataFrame using Min-Max scaling.
+
+    :param df: Input DataFrame containing columns to be normalized.
+    :param cols_to_normalize : List of column names to be normalized using Min-Max scaling.
+    :return: A DataFrame with the specified columns normalized using Min-Max scaling.
+    """
     for feature_name in cols_to_normalize:
         max_value = df[feature_name].max()
         min_value = df[feature_name].min()
